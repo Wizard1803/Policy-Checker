@@ -1,0 +1,105 @@
+<div id="compareModal" class="modal" aria-hidden="true">
+  <div class="modal-card modal-card-compare" style="max-width:940px;width:95%;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;">
+      <div class="close-x" id="closeCompareModal" role="button" tabindex="0" aria-label="Close comparison modal">&times;</div>
+      
+      <div class="modal-top-bar" style="padding-right:48px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <h3 style="margin:0;">Multi-Policy Comparative Analysis</h3>
+        </div>
+        <div class="compare-selected-pills" id="compareSelectedPills" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+          <!-- Selected document pills dynamically inserted here -->
+        </div>
+      </div>
+
+      <!-- Quick Aspect Chips -->
+      <div class="quick-prompts-bar">
+        <span class="quick-prompts-label">Comparison Aspects:</span>
+        <button type="button" class="compare-aspect-chip active" data-aspect="Waiting Periods & Pre-Existing Diseases">Waiting Periods</button>
+        <button type="button" class="compare-aspect-chip" data-aspect="Room Rent, ICU Limits & Hospital Charges">Room Rent &amp; ICU</button>
+        <button type="button" class="compare-aspect-chip" data-aspect="Co-pay Percentages, Deductibles & Sub-limits">Co-pay &amp; Deductibles</button>
+        <button type="button" class="compare-aspect-chip" data-aspect="Maternity, Newborn & Daycare Treatments">Maternity &amp; Daycare</button>
+        <button type="button" class="compare-aspect-chip" data-aspect="Comprehensive Policy Coverage & Key Limits">Full Comparison</button>
+      </div>
+
+      <!-- Compare Input Bar -->
+      <div class="compare-input-bar" style="margin-top:10px;display:flex;gap:10px;align-items:flex-end;">
+        <div style="flex:1;">
+          <input 
+            type="text" 
+            id="compareAspectInput" 
+            class="file-input" 
+            placeholder="Custom comparison aspect (e.g., organ donor coverage, emergency ambulance)..."
+            value="Waiting Periods & Pre-Existing Diseases"
+            style="width:100%;margin:0;font-size:13.5px;"
+          />
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="loadingCompare" class="loading-spinner" style="display:none;"></span>
+          <button type="button" class="btn" id="runCompareBtn" style="height:44px;padding:0 20px;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+            <span>Compare</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Error message container -->
+      <div id="compareErrorMsg" class="compare-error-msg" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(239,83,80,0.12);border:1px solid rgba(239,83,80,0.4);border-radius:6px;color:#ef9a9a;font-size:12.5px;"></div>
+
+      <!-- Result Viewport -->
+      <div id="compareResultContainer" class="compare-result-container" style="flex:1;overflow-y:auto;margin-top:12px;padding:16px;background:rgba(18,18,22,0.65);border:1px solid var(--border-visible);border-radius:var(--radius-md);display:none;min-height:220px;max-height:52vh;">
+        <div id="compareResultMarkdown" class="markdown-body"></div>
+        <div id="compareCitationsList" class="compare-citations-list" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-subtle);display:none;">
+          <h5 style="color:var(--champagne-300);font-size:11.5px;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;font-family:var(--font-mono);">FACTUM Verified Source Citations</h5>
+          <div id="compareCitationsContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- Comparison Footer Actions -->
+      <div id="compareFooterActions" style="display:none;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);">
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.03em;">Grounding: Symmetric Quota Retrieval + 2D Tables</span>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="copy-result-btn" id="copyCompareResultBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="copyCompareText">Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Follow-up Conversational Section (Feature H) -->
+      <div id="compareFollowupSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:11.5px;font-family:var(--font-mono);color:var(--champagne-300);text-transform:uppercase;letter-spacing:0.04em;">
+            Interactive Follow-Up Discussion
+          </span>
+          <span style="font-size:11px;color:var(--text-muted);">Symmetric Multi-Policy Retrieval</span>
+        </div>
+
+        <!-- Follow-up Chat Message Thread -->
+        <div id="compareChatThread" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto;padding:8px 4px;"></div>
+
+        <!-- Follow-up Input Bar -->
+        <form id="compareFollowupForm" style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <input 
+            type="text" 
+            id="compareFollowupInput" 
+            class="file-input" 
+            placeholder="Ask a follow-up question across these policies..."
+            style="flex:1;margin:0;font-size:13px;"
+            autocomplete="off"
+          />
+          <button type="submit" class="btn" id="sendCompareFollowupBtn" style="height:40px;padding:0 16px;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+            <span>Ask</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>

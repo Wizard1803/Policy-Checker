@@ -1,0 +1,23 @@
+<div id="uploadModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div style="position:relative;">
+      <div class="close-x" id="closeUploadModal" role="button" tabindex="0" aria-label="Close upload modal">&times;
+      </div>
+      <h3>Upload Policy PDF</h3>
+      <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <input class="file-input" id="uploadFileInput" type="file" name="policy" accept="application/pdf" required />
+        <div id="uploadProgressContainer" class="upload-progress-container" style="display:none;" role="status" aria-live="polite">
+          <div class="upload-progress-status">
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <span class="upload-status-text">Uploading and encrypting policy document&hellip;</span>
+          </div>
+        </div>
+        <div
+          style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end; flex-wrap: wrap; align-items: stretch;">
+          <button type="button" class="btn" id="cancelUpload">Cancel</button>
+          <button type="submit" class="btn" id="submitUploadBtn">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

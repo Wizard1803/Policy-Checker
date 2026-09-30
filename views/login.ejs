@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --black-bg: #09090b;
+            --dark-gray: #121216;
+            --white-grid-line: rgba(255, 255, 255, 0.03);
+            --beige-100: #F5E6CC;
+            --beige-80: #e8dcc8;
+            --beige-60: #c2baa8;
+            --input-bg: #141419;
+            --mirror-effect-bg: rgba(18, 18, 22, 0.78);
+            --mirror-border: rgba(245, 230, 204, 0.24);
+            --border-focus: #e8d3ab;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--beige-80);
+            background-color: var(--black-bg);
+            background-image: 
+                linear-gradient(0deg, transparent 24.5%, var(--white-grid-line) 24.7%, var(--white-grid-line) 25.3%, transparent 25.5%, transparent 74.5%, var(--white-grid-line) 74.7%, var(--white-grid-line) 75.3%, transparent 75.5%, transparent),
+                linear-gradient(90deg, transparent 24.5%, var(--white-grid-line) 24.7%, var(--white-grid-line) 25.3%, transparent 25.5%, transparent 74.5%, var(--white-grid-line) 74.7%, var(--white-grid-line) 75.3%, transparent 75.5%, transparent);
+            background-size: 200px 200px;
+            background-repeat: repeat;
+            animation: backgroundPan 30s linear infinite;
+        }
+
+        @keyframes backgroundPan {
+            from {
+                background-position: 0 0;
+            }
+            to {
+                background-position: 200px 200px;
+            }
+        }
+
+        .login-container {
+            backdrop-filter: blur(20px) saturate(1.5);
+            background: var(--mirror-effect-bg);
+            padding: 3rem 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            width: 380px;
+            max-width: 90%;
+            border: 1px solid var(--mirror-border);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .login-container:hover {
+            border-color: rgba(245, 230, 204, 0.35);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-container {
+                transition: none;
+            }
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            font-weight: 700;
+            color: var(--beige-100);
+            text-shadow: none;
+            letter-spacing: 0.05em;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            font-size: clamp(0.95rem, 2.5vw, 1rem);
+            color: var(--beige-60);
+            font-weight: 500;
+        }
+
+        input {
+            width: calc(100% - 1.4rem);
+            padding: 0.8rem 0.7rem;
+            border: 1px solid var(--mirror-border);
+            border-radius: 8px;
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            background: var(--input-bg);
+            color: var(--beige-100);
+            outline: none;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input::placeholder {
+            color: var(--beige-60);
+            opacity: 0.85;
+        }
+
+        input:focus-visible, input:focus {
+            background: #19191f;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px var(--black-bg), 0 0 0 4px var(--border-focus);
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.9rem;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #A88B4E, #D4AF37);
+            color: var(--dark-gray);
+            font-size: clamp(1rem, 2.5vw, 1.05rem);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.03em;
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+        }
+
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 10px rgba(245, 230, 204, 0.3);
+            background: linear-gradient(135deg, #B99C5F, #E0C14D);
+        }
+
+        .btn:hover:before {
+            width: 200%;
+            height: 200%;
+            opacity: 1;
+        }
+
+        .extra-links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: clamp(0.85rem, 2.5vw, 0.9rem);
+            color: var(--beige-80);
+        }
+
+        .extra-links a {
+            color: var(--beige-100);
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .extra-links a:before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: var(--beige-100);
+            bottom: -3px;
+            left: 0;
+            transform-origin: right;
+            transform: scaleX(0);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .extra-links a:hover {
+            color: white;
+        }
+
+        .extra-links a:hover:before {
+            transform-origin: left;
+            transform: scaleX(1);
+        }
+
+        /* --- Media Queries for Responsiveness --- */
+
+        /* Tablets and larger phones */
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 2.5rem 2rem;
+                width: 95%;
+            }
+
+            h2 {
+                margin-bottom: 2rem;
+                font-size: clamp(1.6rem, 6vw, 2.2rem);
+            }
+
+            label {
+                font-size: clamp(0.85rem, 2.8vw, 0.95rem);
+            }
+
+            input {
+                padding: 0.7rem 0.6rem;
+                font-size: clamp(0.9rem, 2.8vw, 1rem);
+            }
+
+            .btn {
+                padding: 0.8rem;
+                font-size: clamp(0.95rem, 3vw, 1.05rem);
+            }
+
+            .extra-links {
+                margin-top: 1.2rem;
+                font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            }
+        }
+
+        /* Smaller phones */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+                border-radius: 12px;
+            }
+
+            h2 {
+                margin-bottom: 1.8rem;
+                font-size: clamp(1.5rem, 7vw, 2rem);
+            }
+
+            label {
+                font-size: clamp(0.8rem, 3.5vw, 0.9rem);
+            }
+
+            input {
+                padding: 0.6rem 0.5rem;
+                font-size: clamp(0.85rem, 3.5vw, 0.95rem);
+            }
+
+            .btn {
+                padding: 0.7rem;
+                font-size: clamp(0.9rem, 3.8vw, 1rem);
+            }
+
+            .extra-links {
+                margin-top: 1rem;
+                font-size: clamp(0.75rem, 3vw, 0.85rem);
+            }
+        }
+
+        .auth-error-banner {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #f87171;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.25rem;
+            font-size: 0.88rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Welcome Back</h2>
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="auth-error-banner" role="alert"><%= error %></div>
+        <% } %>
+        <form action="/user/login" method="POST">
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username/email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn">Login</button>
+
+            <div class="extra-links">
+                <p>Don’t have an account? <a href="/user/register">Register</a></p>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

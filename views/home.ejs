@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Policy Checker</title>
+
+  <!-- Curated typography stack -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Modular Observatory Design System -->
+  <link rel="stylesheet" href="/css/tokens.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/modals.css" />
+</head>
+<body>
+  <div class="page">
+
+    <!-- HEADER -->
+    <%- include('partials/header', { user }) %>
+
+    <!-- HERO -->
+    <main class="hero" role="main">
+
+      <!-- orbit wrapper (behind main text) -->
+      <div class="orbit-wrap" aria-hidden="true">
+        <div class="orbit" role="presentation">
+          <!-- 8 items -->
+          <div class="item pos0"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+          <div class="item pos1"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+          <div class="item pos2"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>
+          <div class="item pos3"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div></div>
+          <div class="item pos4"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div></div>
+          <div class="item pos5"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div></div>
+          <div class="item pos6"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div></div>
+          <div class="item pos7"><div class="inner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- center content (on top) -->
+      <div class="hero-inner">
+        <h1>Upload, Check, Apply</h1>
+        <p class="sub">Quickly upload your policy form, check your eligibility and get matched with the best plans — secure, fast and reliable.</p>
+
+        <div class="hero-actions">
+          <button class="btn" id="openUploadBtn" aria-label="Upload PDF Document">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Document
+          </button>
+        </div>
+
+        <div class="hero-extra">Trusted &bull; Secure &bull; Native PDF Document Analysis (up to 15MB)</div>
+      </div>
+
+    </main>
+
+    <section style="padding:40px 48px; color:var(--muted); flex-grow:1;">
+      <div style="max-width:1200px;margin:0 auto;">
+        <div class="section-header-bar">
+          <h3 style="color:var(--beige-100); margin:0;">Recent uploads</h3>
+          <span class="section-count-badge"><%= files ? files.length : 0 %> <%= files && files.length === 1 ? 'document' : 'documents' %></span>
+        </div>
+        <p style="margin:6px 0 20px 0; font-size:13.5px; color:var(--text-secondary);">(Click on a file name to view source document or &ldquo;Check Policy&rdquo; to analyze.)</p>
+
+        <div class="file-cards-grid">
+            <% if (files && files.length > 0) { %>
+                <% files.forEach(function(file, index) { %>
+                    <div class="file-card" id="file-card-<%= file._id %>" data-file-id="<%= file._id %>" data-state="<%= file.processingState || 'ready' %>" style="--card-index: <%= index %>;">
+                        <div>
+                            <div class="file-card-header">
+                                <div class="file-card-title-group">
+                                    <label class="compare-checkbox-label" title="Select policy for side-by-side comparison">
+                                        <input 
+                                            type="checkbox" 
+                                            class="compare-checkbox" 
+                                            data-file-id="<%= file._id %>" 
+                                            data-file-name="<%= file.fileName %>"
+                                            <%= file.processingState !== 'ready' ? 'disabled' : '' %>
+                                            aria-label="Select <%= file.fileName %> for comparison"
+                                        />
+                                        <span class="compare-checkbox-custom" aria-hidden="true"></span>
+                                    </label>
+                                    <svg class="file-card-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <a href="<%= file.fileUrl %>" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                                        <div class="file-card-title" id="file-title-<%= file._id %>">
+                                            <%= file.fileName %>
+                                        </div>
+                                    </a>
+                                </div>
+                                <div class="file-badge-container" id="badge-container-<%= file._id %>">
+                                    <% if (file.processingState === 'ready') { %>
+                                        <% const pageInfo = file.pageCount > 0 ? file.pageCount + ' pages' : 'Indexed'; %>
+                                        <span class="badge badge-ready">Ready &bull; <%= pageInfo %><% if (file.tableCount && file.tableCount > 0) { %> &bull; <%= file.tableCount %> <%= file.tableCount === 1 ? 'table' : 'tables' %><% } %></span>
+                                    <% } else if (file.processingState === 'processing' || file.processingState === 'uploaded') { %>
+                                        <span class="badge badge-processing badge-pulse"><span class="badge-dot"></span> Processing&hellip;</span>
+                                    <% } else if (file.processingState === 'failed') { %>
+                                        <span class="badge badge-failed" title="<%= file.processingError || 'Processing error' %>">Failed</span>
+                                    <% } else { %>
+                                        <span class="badge badge-ready">Ready</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="file-card-meta">
+                                <span>Uploaded <%= new Date(file.uploadedAt).toLocaleDateString() %></span>
+                                <% if (file.processingState === 'failed' && file.processingError) { %>
+                                    <span style="color:#e57373;display:block;margin-top:4px;font-size:11px;"><%= file.processingError.slice(0, 120) %></span>
+                                <% } %>
+                            </div>
+                        </div>
+                        <div class="file-card-actions">
+                            <% if (file.tableCount && file.tableCount > 0) { %>
+                                <button type="button" class="btn-secondary view-tables-btn" data-file-id="<%= file._id %>" data-file-name="<%= file.fileName %>" aria-label="View structured tables for <%= file.fileName %>">Tables</button>
+                            <% } %>
+                            <button type="button" class="btn-secondary rename-file-btn" data-file-id="<%= file._id %>" data-file-name="<%= file.fileName %>" aria-label="Rename <%= file.fileName %>">Rename</button>
+                            <button type="button" class="btn-danger delete-file-btn" data-file-id="<%= file._id %>" data-file-name="<%= file.fileName %>" aria-label="Delete <%= file.fileName %>">Delete</button>
+                            <% if (file.processingState === 'failed') { %>
+                                <button type="button" class="btn-secondary retry-file-btn" data-file-id="<%= file._id %>" aria-label="Retry processing for <%= file.fileName %>">Retry</button>
+                            <% } else if (file.processingState === 'ready') { %>
+                                <button type="button" class="btn-secondary retry-file-btn" data-file-id="<%= file._id %>" aria-label="Reprocess <%= file.fileName %>" title="Re-extract tables and text">Reprocess</button>
+                            <% } %>
+                            <% if (file.processingState === 'ready') { %>
+                                <button type="button" class="btn-secondary search-clauses-btn" data-file-id="<%= file._id %>" data-file-name="<%= file.fileName %>" aria-label="Search clauses in <%= file.fileName %>">Search</button>
+                                <button type="button" class="btn-secondary audit-report-btn" data-file-id="<%= file._id %>" data-file-name="<%= file.fileName %>" aria-label="View actuarial audit report for <%= file.fileName %>">Audit Report</button>
+                            <% } %>
+                            <button class="btn check-policy-btn" data-file-id="<%= file._id %>" <%= (file.processingState === 'processing' || file.processingState === 'uploaded' || file.processingState === 'failed') ? 'disabled' : '' %> aria-label="Check policy for <%= file.fileName %>">Check Policy</button>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="empty-observatory-card">
+                    <div class="empty-icon-wrap" aria-hidden="true">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                    </div>
+                    <h4 class="empty-heading">No files uploaded yet.</h4>
+                    <p class="empty-desc">Click &ldquo;Upload Document&rdquo; above to get started &mdash; extract structured clauses, query coverage rules, and inspect actuarial tables.</p>
+                    <button type="button" class="btn btn-empty-cta" onclick="document.getElementById('openUploadBtn').click()" aria-label="Upload your first document">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Upload Document
+                    </button>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Floating Policy Comparison Action Bar -->
+        <div id="compareFloatingBar" class="compare-floating-bar" aria-hidden="true" style="display: none;">
+          <div class="compare-bar-content">
+            <div class="compare-bar-info">
+              <span class="compare-bar-badge" id="compareSelectedCount">0 selected</span>
+              <span class="compare-bar-names" id="compareSelectedNames">Select 2 or 3 policies to compare</span>
+            </div>
+            <div class="compare-bar-actions">
+              <button type="button" class="btn-secondary compare-clear-btn" id="compareClearBtn">Clear</button>
+              <button type="button" class="btn compare-trigger-btn" id="compareTriggerBtn" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Compare Policies
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="observatory-footer">
+      <div class="footer-inner">
+        <span class="footer-copy">&copy; <%= new Date().getFullYear() %> Policy Checker &bull; Parul University</span>
+        <span class="footer-meta">7IEP_G46</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <%- include('partials/modals') %>
+
+  <!-- Markdown rendering + sanitization (served locally) -->
+  <script src="/vendor/marked/lib/marked.umd.js"></script>
+  <script src="/vendor/dompurify/purify.min.js"></script>
+  <!-- Modular Feature Controllers -->
+  <script src="/js/modules/toast.js"></script>
+  <script src="/js/modules/markdown-utils.js"></script>
+  <script src="/js/modules/file-manager.js"></script>
+  <script src="/js/modules/pdf-viewer.js"></script>
+  <script src="/js/modules/chat.js"></script>
+  <script src="/js/modules/compare.js"></script>
+  <script src="/js/modules/summary.js"></script>
+  <script src="/js/modules/search.js"></script>
+  <script src="/js/modules/tables.js"></script>
+  <script src="/js/home.js"></script>
+</body>
+</html>

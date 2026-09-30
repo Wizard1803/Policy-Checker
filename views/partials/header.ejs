@@ -1,0 +1,22 @@
+<header>
+  <div class="brand">
+    <span style="letter-spacing:0.6px; display:inline-flex; align-items:center; gap:8px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--beige-100)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <a href="/" class="brand-link">Policy Portal</a>
+    </span>
+  </div>
+
+  <% if (user) { %>
+    <div id="quotaBadge" class="quota-badge" title="Monthly Usage" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.4px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.22);color:var(--champagne-100);">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="quotaTierLabel"><%= (user.tier || 'standard').toUpperCase() %></span>
+      <span id="quotaQueriesCounter" style="color:var(--text-secondary);font-weight:400;"></span>
+    </div>
+    <a href="/user/logout" class="auth-button">Logout</a>
+    <div class="profile" title="Profile"><%= user.username ? user.username.charAt(0).toUpperCase() : 'P' %></div>
+  <% } else { %>
+    <a href="/user/login" class="auth-button">Login</a>
+    <div class="profile" title="Profile">?</div>
+  <% } %>
+</header>
+

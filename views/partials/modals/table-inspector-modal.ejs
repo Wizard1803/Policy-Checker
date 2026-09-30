@@ -1,0 +1,16 @@
+<div id="tableInspectorModal" class="modal" aria-hidden="true">
+  <div class="modal-card modal-card-large" style="max-width:850px;max-height:85vh;display:flex;flex-direction:column;">
+    <div style="position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;">
+      <div class="close-x" id="closeTableInspectorModal" role="button" tabindex="0"
+        aria-label="Close table inspector modal">&times;</div>
+      <h3>Document Tables</h3>
+      <p style="margin:4px 0 16px;color:var(--muted);font-size:13px;">Extracted structured tables for <strong
+          id="tableInspectorFileName" style="color:var(--beige-100)"></strong></p>
+      <div id="tableInspectorLoading" class="loading-spinner" style="display:none;margin:24px auto;"></div>
+      <div id="tableInspectorContent" class="table-inspector-content"
+        style="overflow-y:auto;max-height:60vh;padding-right:4px;">
+        <!-- Dynamic table cards will be inserted here -->
+      </div>
+    </div>
+  </div>
+</div>

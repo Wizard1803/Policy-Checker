@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error <%= typeof statusCode !== 'undefined' ? statusCode : 500 %> - Policy Checker</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+            box-sizing: border-box;
+        }
+
+        .error-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 2.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-code {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #f87171;
+            margin: 0 0 0.5rem 0;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: #e2e8f0;
+        }
+
+        .error-message {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 2rem 0;
+        }
+
+        .btn-home {
+            display: inline-block;
+            background-color: #2563eb;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-home:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <h1 class="error-code"><%= typeof statusCode !== 'undefined' ? statusCode : 500 %></h1>
+        <h2 class="error-title"><%= typeof statusCode !== 'undefined' && statusCode === 404 ? 'Page Not Found' : 'Something Went Wrong' %></h2>
+        <p class="error-message"><%= typeof message !== 'undefined' ? message : 'An unexpected error occurred while processing your request.' %></p>
+        <a href="/" class="btn-home">Return to Dashboard</a>
+    </div>
+</body>
+</html>

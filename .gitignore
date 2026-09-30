@@ -1,0 +1,6 @@
+.env
+node_modules/
+outputs/
+.agents/
+scripts/
+.env.example

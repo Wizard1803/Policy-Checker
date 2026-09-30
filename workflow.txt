@@ -1,0 +1,768 @@
+### Documentation note
+
+Use **README.md** and **policy-checker-bible.md** for setup, required environment variables, default Gemini models (`GEMINI_MODEL`, default `gemini-3.6-flash`), and academic identity (`7IEP_G46`, Project - II (303105300), 7th Semester, Academic Year 2026–2027, Parul University). Diagrams and flows below reflect the complete production architecture including Page-Bounded Hybrid RAG, 2D Tabular Extraction, Multi-Policy Comparison, Multi-Turn Chat, and PDFKit Export.
+
+---
+
+### High‑level architecture diagram
+
+```text
++---------------------------+         +-------------------------------------------------+
+|        Web Browser        |         |                  MongoDB Atlas                  |
+| (EJS pages, CSS/JS, modal)|         | (users, files, chunks, tables, convs, messages) |
++-------------+-------------+         +------------------------+------------------------+
+              |                                                 ^
+              | HTTP (EJS views, static assets, JSON)           |
+              v                                                 |
+        +-----+-------------------------------------------------+------+
+        |                         Express App (app.js)                 |
+        |                                                              |
+        |  - loads env (.env)                                          |
+        |  - connectDb() -> MongoDB Atlas                              |
+        |  - sets EJS view engine                                      |
+        |  - security headers: nosniff, SAMEORIGIN, cookie-parser      |
+        |  - serves static assets (/public)                            |
+        |  - serves vendor assets (/vendor/marked, /vendor/dompurify)  |
+        |  - mounts routers:                                           |
+        |      /      -> index.routes.js                               |
+        |      /user  -> user.routes.js                                |
+        +------+----------------------------------------+---------------+
+               |                                        |
+               |                                        |
+               v                                        v
++--------------+-----------+          +-----------------+-----------------------+
+|      Auth Router         |          |               Main Router               |
+|    (`user.routes.js`)    |          |            (`index.routes.js`)          |
++--------------------------+          +-----------------------------------------+
+| - GET /user/register     |          | Mounts domain sub-routers:              |
+| - POST /user/register    |          | - file.routes.js:                       |
+| - GET /user/login        |          |   * GET / (load dashboard & files)      |
+| - POST /user/login       |          |   * POST /upload (enforceQuota, multer) |
+| - GET /user/logout       |          |   * GET /files/:id/status (state poll)  |
+| - GET /user/quota        |          |   * GET /files/:id/tables (2D tables)   |
++--------------------------+          |   * PATCH /files/:id/rename (rename)    |
+                                      |   * POST /files/:id/reprocess (retry)   |
+                                      |   * DELETE /files/:id (cascade delete)  |
+                                      |   * GET /files/:id/view-pdf (stream)    |
+                                      | - chat.routes.js:                       |
+                                      |   * POST /files/:id/chat (RAG turn)     |
+                                      |   * GET /files/:id/conversations (list) |
+                                      |   * GET /files/:id/chat/history (turns) |
+                                      |   * POST /check-policy/:id (legacy Q&A) |
+                                      | - compare.routes.js:                    |
+                                      |   * POST /compare-policies (2-3 docs)   |
+                                      |   * POST /compare-policies/chat (turn)  |
+                                      | - summary.routes.js:                    |
+                                      |   * GET /files/:id/export-summary       |
+                                      | - search.routes.js:                     |
+                                      |   * GET /files/:id/search (clauses)     |
+                                      +-----------------------------------------+
+
+      ^
+      |
+      | JWT cookie
+      |
++-----+-------------------------------+
+|  Auth Middleware (`auth.js`)       |
++------------------------------------+
+| - protect:                         |
+|   * read token cookie              |
+|   * verify JWT                     |
+|   * load User (no password)        |
+|   * set req.user or null           |
+|                                    |
+| - requireAuth:                     |
+|   * require valid token            |
+|   * load User                      |
+|   * if fail -> redirect /login     |
++------------------------------------+
+```
+
+---
+
+### Request flow sequence (login → upload → check)
+
+```text
+User Browser              Express (app.js)         Auth Router         Main Router      MongoDB      Cloudinary   Gemini API
+     |                           |                      |                  |              |             |             |
+1. GET /user/login  ------------>|  route to /user      |                  |              |             |             |
+     |                           |--------------------->| render login.ejs |              |             |             |
+     |<--------------------------|<---------------------|                  |              |             |             |
+     |
+2. POST /user/login ------------>|  route to /user      |                  |              |             |             |
+   (username,pwd)                |--------------------->| validate,input   |              |             |             |
+     |                           |                      | find user ------>|              |             |             |
+     |                           |                      |-------------------------------> |             |             |
+     |                           |                      | bcrypt.compare                 |             |             |
+     |                           |                      | sign JWT + set cookie          |             |             |
+     |<--------------------------|<---------------------| redirect /                      |             |             |
+     |
+3. GET / ----------------------->|  route to /          |                  |              |             |             |
+     |  (has token cookie)       |  protect middleware  |                  |              |             |             |
+     |                           |  verify JWT, load user from Mongo ----->|             |             |             |
+     |                           |---------------------------------------->|              |             |             |
+     |                           |                  user->req.user         |             |             |             |
+     |                           |----------------------------->| find files by user --->|             |             |
+     |                           |                              |----------------------->|             |             |
+     |                           |                              | render home.ejs        |             |             |
+     |<--------------------------|<-----------------------------|                        |             |             |
+     |
+4. User opens Upload modal, submits POST /upload with PDF
+     | POST /upload ------------>| route to /           |                  |             |             |             |
+     | (multipart form)         | requireAuth (token->user via Mongo)      |             |             |             |
+     |                           |                  |--------------------->|             |             |             |
+     |                           | multer parses file (req.file)           |             |             |             |
+     |                           |------------------------------->| cloudinary.uploader.upload_stream(buffer) ->     |
+     |                           |                                |----------------------------------->|             |
+     |                           |                                | get secure_url (fileUrl)           |             |
+     |                           |                                | save File doc -------------------->|             |
+     |                           |                                |----------------------------------->|             |
+     |<--------------------------|<-------------------------------| redirect /                         |             |
+     |
+5. On home, user clicks "Check Policy" (fileId) and enters conversational query
+     | POST /files/:id/chat ---->| route to /chat      |                  |              |             |             |
+     | {message}                 | requireAuth (token->user)              |              |             |             |
+     |                           |                  |-------------------->| verify file & quota ------>|             |
+     |                           | Hybrid Retrieval: in-memory cosine (768d MRL) + 2D GFM tables      |             |
+     |                           | Injects last 3 turns + retrieved chunks & tables                   |             |
+     |                           | call Gemini API (gemini-3.6-flash / 3.5-flash fallback) ---------->|             |
+     |                           |                                                                    | inference
+     |                           |<-------------------------------------------------------------------|
+     |                           | FACTUM citation verification pass (cross-check verbatim chunk text) |
+     |                           | save Message with verified citations to MongoDB ------------------>|
+     |                           | send JSON {success: true, message: {text, citations}}              |
+     |<--------------------------|                                                                    |
+     |
+6. Browser JS renders assistant response with interactive [Verified] citation tags and PDF page jump anchors
+```
+
+
+
+
+
+
+
+
+
+
+
+### Tech stack
+
+- **Runtime / Language**
+  - **Node.js** (engine `>=22.17.0`)
+  - **JavaScript (CommonJS)**
+
+- **Web framework**
+  - **Express 5** (`express`)
+  - **View engine**: **EJS** (`ejs`) for server‑side HTML templates (`home.ejs`, `login.ejs`, `register.ejs`)
+
+- **Database / Data layer**
+  - **MongoDB** via **Mongoose** (`mongoose`)
+  - Connection helper in `config/db.js` (uses `process.env.ATLAS_URI`):
+    ```1:10:config/db.js
+    const mongoose = require('mongoose');
+    const dbURL = process.env.ATLAS_URI; 
+    function connectDb(){
+        mongoose.connect(dbURL)
+        .then(()=>{
+            console.log('Data base connected')
+        });
+    }
+    
+    module.exports = connectDb;
+    ```
+  - **Models**
+    - `user.model.js`: users with `username`, `email`, `password` (hashed)
+    - `files.model.js`: uploaded PDF metadata (`fileName`, `fileUrl`, optional `cloudinaryPublicId` / `cloudinaryVersion`, `uploadedBy` → `User`, `uploadedAt`)
+
+- **Auth / security**
+  - **JWT** (`jsonwebtoken`) for stateless auth
+  - **Password hashing**: `bcrypt`
+  - **Cookies**: `cookie-parser` reads the `token` cookie
+  - **Validation**: `express-validator` on auth routes
+  - **Middleware**: `middleware/auth.js`
+    - `protect`: makes `req.user` optional (for pages that can show both guest and logged‑in state)
+    - `requireAuth`: enforces login (redirects to `/user/login` if no/invalid token)
+
+    ```1:55:middleware/auth.js
+    const jwt = require('jsonwebtoken');
+    const User = require('../models/user.model'); 
+    
+    const protect = async (req, res, next) => {
+        const token = req.cookies.token;
+    
+        if (!token) {
+            req.user = null;
+            return next();
+        }
+    
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.id).select('-password');
+    
+            if (!user) {
+                req.user = null; 
+                return next();
+            }
+    
+            req.user = user; 
+            next();
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            req.user = null;
+            next();
+        }
+    };
+    
+    const requireAuth = async (req, res, next) => {
+        const token = req.cookies.token;
+    
+        if (!token) {
+            return res.status(401).redirect('/user/login');
+        }
+    
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.id);
+    
+            if (!user) {
+                return res.status(401).redirect('/user/login');
+            }
+    
+            req.user = user;
+            next();
+        } catch (error) {
+            res.status(401).redirect('/user/login');
+        }
+    };
+    
+    module.exports = { protect, requireAuth };
+    ```
+
+- **File storage**
+  - **Cloudinary** via `cloudinary`
+  - Config in `config/cloudinary.config.js`
+
+- **AI / policy checking**
+  - **Google Gemini Client Dispatcher** (`services/gemini.client.js`): Dual-priority queue with `gemini-3.6-flash` (primary), `gemini-3.5-flash` (fallback on 503), `gemini-flash-lite-latest` (table extraction), and `gemini-embedding-001` (768d embeddings).
+  - Round-robin key rotation across `GEMINI_API_KEYS` with automatic 60s quarantine on HTTP 429.
+  - Page-Bounded Hybrid RAG (`services/chunk.service.js`): 350-word chunks with 50-word overlap, strictly terminating at page breaks.
+  - Structured 2D table extraction (`services/table.service.js`) with Chain-of-Table reasoning.
+
+- **File upload**
+  - **multer** with **memory storage** (`multer.memoryStorage()`) for in‑memory PDF upload before sending to Cloudinary
+
+- **Utilities**
+  - `dotenv` for env vars (`.env` with `ATLAS_URI`, `JWT_SECRET`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `GEMINI_API_KEY`, etc.)
+  - `nodemon` for dev auto‑restart
+
+---
+
+### High‑level architecture
+
+- **Entry point**: `app.js` (validates `JWT_SECRET`, `ATLAS_URI`, and Cloudinary config before `listen`)
+  ```javascript
+require('dotenv').config();
+
+['JWT_SECRET', 'ATLAS_URI'].forEach((key) => {
+    if (!process.env[key]) {
+        console.error(`Missing required environment variable: ${key}`);
+        process.exit(1);
+    }
+});
+
+const hasCloudinaryUrl = Boolean(process.env.CLOUDINARY_URL);
+const hasCloudinaryParts =
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET;
+if (!hasCloudinaryUrl && !hasCloudinaryParts) {
+    console.error(
+        'Missing Cloudinary config: set CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET'
+    );
+    process.exit(1);
+}
+
+const express = require('express');
+const app = express();
+const userRouter = require('./routes/user.routes');
+const indexRouter = require('./routes/index.routes');
+const connectDb = require('./config/db');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+const { reconcileOrphanedFiles } = require('./services/document.service');
+
+// 3. Your app setup
+app.set('view engine', 'ejs');
+app.use(cookieParser());
+
+// Security headers (inline baseline without heavy external dependencies)
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '0');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+});
+
+connectDb()
+    ?.then(() => {
+        return Promise.resolve(reconcileOrphanedFiles()).catch((err) => {
+            console.warn('Orphan reconciliation notice:', err?.message || err);
+        });
+    })
+    .catch((err) => {
+        console.error('MongoDB startup error:', err?.message || err);
+    });
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Static assets (CSS/JS)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Vendor assets (served locally from node_modules)
+app.use('/vendor/marked', express.static(path.join(__dirname, 'node_modules', 'marked')));
+app.use('/vendor/dompurify', express.static(path.join(__dirname, 'node_modules', 'dompurify', 'dist')));
+
+// 4. Your routes
+app.use('/', indexRouter);
+app.use('/user', userRouter);
+
+// Central error boundary
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+    const statusCode = err.statusCode || err.status || 500;
+    const isProd = process.env.NODE_ENV === 'production';
+
+    console.error(`[Error] ${req.method} ${req.originalUrl}:`, {
+        message: err.message,
+        statusCode,
+        code: err.code,
+        stack: isProd ? undefined : err.stack,
+    });
+
+    const isAjax = req.xhr ||
+        req.headers?.['x-requested-with'] === 'XMLHttpRequest' ||
+        (req.headers?.accept && req.headers.accept.includes('application/json')) ||
+        (req.path && (req.path.startsWith('/files/') || req.path.startsWith('/compare-policies')));
+
+    if (isAjax || !req.accepts('html')) {
+        return res.status(statusCode).json({
+            success: false,
+            code: err.code || 'INTERNAL_ERROR',
+            message: err.message || 'An unexpected error occurred.',
+        });
+    }
+
+    return res.status(statusCode).render('error', {
+        statusCode,
+        message: err.message || 'An unexpected error occurred.',
+    }, (renderErr, html) => {
+        if (renderErr) {
+            return res.status(statusCode).send(`Error ${statusCode}: ${err.message || 'An unexpected error occurred.'}`);
+        }
+        res.send(html);
+    });
+});
+
+if (require.main === module) {
+    app.listen(3000, () => {
+        console.log("server is started");
+    });
+}
+
+module.exports = app;
+  ```
+- **Routing**
+  - `routes/user.routes.js`: authentication (register, login, logout)
+  - `routes/index.routes.js`: home page, file upload, and policy‑check API
+- **Views / front-end**
+  - `views/register.ejs`: registration page
+  - `views/login.ejs`: login page
+  - `views/home.ejs`: main dashboard template (includes partials, loads `/css/home.css` + `/js/home.js`)
+  - `views/partials/header.ejs`: header/nav/auth controls
+  - `views/partials/modals.ejs`: upload + policy-check modals
+  - `public/css/home.css`: home + modal styles
+  - `public/js/home.js`: modal logic + policy-result formatting/rendering
+  - Vendor scripts are served locally:
+    - `/vendor/marked/lib/marked.umd.js`
+    - `/vendor/dompurify/purify.min.js`
+
+---
+
+### Detailed workflow
+
+#### 1) Server startup
+
+1. You run Node (e.g. `npm start` → `node app.js`, or `nodemon`).
+2. `dotenv` loads env vars; `app.js` exits if `JWT_SECRET`, `ATLAS_URI`, or Cloudinary config is missing.
+3. `connectDb()` connects to MongoDB using `ATLAS_URI` (exits on failure).
+4. Express is set up with:
+   - view engine `ejs`
+   - JSON and URL‑encoded parsers
+   - `cookie-parser` for cookies
+5. Two routers are mounted:
+   - `/` → `index.routes.js`
+   - `/user` → `user.routes.js`
+
+---
+
+#### 2) Registration flow
+
+- **Route**: `GET /user/register` → show the form
+
+  ```8:10:routes/user.routes.js
+  router.get("/register", (req, res) => {
+      res.render('register');
+  });
+  ```
+
+- **Page**: `views/register.ejs`  
+  Beautiful glassmorphism registration UI with fields:
+  - `username`
+  - `email`
+  - `password`
+
+  Form posts to `/user/register`:
+
+  ```262:285:views/register.ejs
+  <form action="/user/register" method="post">
+      ...
+      <input type="text" id="username" name="username" ...>
+      ...
+      <input type="email" id="email" name="email" ...>
+      ...
+      <input type="password" id="password" name="password" ...>
+      ...
+  </form>
+  ```
+
+- **Submit**: `POST /user/register`
+
+  ```12:42:routes/user.routes.js
+  router.post("/register",
+      body('email').trim().isEmail().isLength({ min: 13 }),
+      body('password').trim().isLength({ min: 5 }),
+      body('username').trim().isLength({ min: 3 }),
+      async (req, res) => {
+          const errors = validationResult(req);
+          if (!errors.isEmpty()) {
+              return res.status(400).json({
+                  errors: errors.array(),
+                  message: "Invalid input data"
+              });
+          }
+          const { username, email, password } = req.body;
+          const hashedPassword = await bcrypt.hash(password, 10);
+          const newUser = await userModel.create({
+              username,
+              email,
+              password: hashedPassword
+          });
+  
+          const token = jwt.sign({
+              id: newUser._id,
+              email: newUser.email,
+              username: newUser.username
+          }, process.env.JWT_SECRET);
+  
+          res.cookie('token', token);
+          res.redirect('/');
+      });
+  ```
+
+**Flow:**
+
+1. Validate fields (`express-validator`).
+2. Hash password with `bcrypt`.
+3. Save user in MongoDB (`User` model).
+4. Generate JWT containing `{ id, email, username }`.
+5. Set JWT as a `token` cookie.
+6. Redirect to `/` (home).
+
+---
+
+#### 3) Login flow
+
+- **Route**: `GET /user/login` → show login form
+
+  ```44:46:routes/user.routes.js
+  router.get('/login', (req, res) => {
+      res.render('login');
+  });
+  ```
+
+- **Page**: `views/login.ejs`  
+  Login UI with:
+  - `username` (called “Username or Email” in UI)
+  - `password`
+
+  ```262:280:views/login.ejs
+  <form action="/user/login" method="POST">
+      ...
+      <input type="text" id="username" name="username" ...>
+      ...
+      <input type="password" id="password" name="password" ...>
+      ...
+  </form>
+  ```
+
+- **Submit**: `POST /user/login`
+
+  ```48:74:routes/user.routes.js
+  router.post('/login',
+      body('username').trim().isLength({ min: 3 }),
+      body('password').trim().isLength({ min: 5 }),
+      async (req, res) => {
+          const errors = validationResult(req);
+          if (!errors.isEmpty()) {
+              return res.status(400).json({ errors: errors.array(), message: "Invalid input data" });
+          }
+          const { username, password } = req.body;
+          const user = await userModel.findOne({ username });
+          if (!user) {
+              return res.status(401).json({ message: "Invalid username or password" });
+          }
+          const isMatch = await bcrypt.compare(password, user.password);
+          if (!isMatch) {
+              return res.status(401).json({ message: "Invalid username or password" });
+          }
+          const token = jwt.sign({
+              id: user._id,
+              email: user.email,
+              username: user.username
+          }, process.env.JWT_SECRET);
+  
+          res.cookie('token', token);
+          res.redirect('/');
+      });
+  ```
+
+**Flow:**
+
+1. Validate input.
+2. Find user by `username`.
+3. Compare password with `bcrypt.compare`.
+4. If success: sign JWT, set `token` cookie, redirect to `/`.
+5. If failure: send 400/401 JSON error (no redirect).
+
+---
+
+ 4 Logout flow
+
+- **Route**: `GET /user/logout`
+
+  ```78:83:routes/user.routes.js
+  router.get('/logout', (req, res) => {
+      res.clearCookie('token');
+      res.redirect('/user/login?message=logged_out');
+  });
+  ```
+
+Clears `token` cookie and sends the user back to login.
+
+---
+
+#### 5 Home page & user context
+
+- **Route**: `GET /` (home) in `routes/index.routes.js`  
+  Uses `protect` middleware, so it works for both guests and logged‑in users.
+
+  ```15:25:routes/index.routes.js
+  router.get("/", protect, async (req, res) => {
+      let files = [];
+      if (req.user) {
+          try {
+              files = await File.find({ uploadedBy: req.user._id }).sort({ uploadedAt: -1 });
+          } catch (error) {
+              console.error('Error fetching user files:', error);
+          }
+      }
+      res.render('home', { files: files, user: req.user });
+  });
+  ```
+
+**Flow:**
+
+1. `protect` reads `token` cookie, verifies JWT if present, loads user (without password) into `req.user`.
+2. If logged in, query `File` documents where `uploadedBy` is the current user, sorted newest first.
+3. Render `home.ejs` with:
+   - `files`: the user’s uploads
+   - `user`: the logged in user or `null`
+
+- **View header behaviour** (`home.ejs`):
+
+  ```282:290:views/home.ejs
+  <% if (user) { %>
+    <!-- Logged in -->
+    <a href="/user/logout" class="auth-button">Logout</a>
+    <div class="profile" title="Profile"><%= user.username ? user.username.charAt(0).toUpperCase() : 'P' %></div>
+  <% } else { %>
+    <!-- Guest -->
+    <a href="/user/login" class="auth-button">Login</a>
+    <div class="profile" title="Profile">?</div>
+  <% } %>
+  ```
+
+Guests see a `Login` button; logged‑in users see `Logout` and an avatar with the initial.
+
+---
+
+#### 6 Uploading a policy PDF
+
+- **Front‑end trigger**: on the home page, `Upload Form` opens the upload modal.
+  - Modal HTML: `views/partials/modals.ejs`
+  - Behavior (open/close): `public/js/home.js`
+  - Styling: `public/css/home.css`
+
+- **Back‑end route**: `POST /upload` in `routes/index.routes.js`  
+  Protected by `requireAuth` (must be logged in).
+
+  Implementation highlights (see `routes/index.routes.js` for full code):
+
+  - Multer **memory** storage, **15 MB** max, **PDF-only** `fileFilter`.
+  - Wrapper around `upload.single('policy')` maps `LIMIT_FILE_SIZE` and other errors to **400** text responses.
+  - `sanitizeObjectName` on original filename; Cloudinary `public_id` under `policies/{userId}/…`.
+  - `upload_stream` with `resource_type: 'raw'`, `access_mode: 'public'`, per-user `folder`.
+  - Saves `fileName`, `fileUrl`, `cloudinaryPublicId`, `cloudinaryVersion`, `uploadedBy`; then **redirect** `/`.
+
+**Flow:**
+
+1. `requireAuth` ensures user is logged in (`req.user` is populated).
+2. `multer` parses multipart form and provides `req.file` (in memory).
+3. Upload file buffer to Cloudinary as a **raw** resource; store `secure_url` and Cloudinary ids on the `File` document.
+4. Redirect back to `/`, where the new file shows in “Recent uploads”.
+
+---
+
+#### 7) Listing user files
+
+- Done as part of `GET /` (see step 5).
+- In `home.ejs`, files are rendered:
+
+  ```56:71:views/home.ejs
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;">
+      <% if (files && files.length > 0) { %>
+          <% files.forEach(function(file) { %>
+              <div class="file-card">
+                  <div>
+                      <a href="<%= file.fileUrl %>" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+                          <div style="font-weight:700;color:var(--beige-100)">
+                              <%= file.fileName %>
+                          </div>
+                      </a>
+                      <div style="font-size:13px;color:var(--muted)">Uploaded <%= new Date(file.uploadedAt).toLocaleDateString() %></div>
+                  </div>
+                  <div class="file-card-actions">
+                      <button class="btn check-policy-btn" data-file-id="<%= file._id %>">Check Policy</button>
+                  </div>
+              </div>
+  ```
+
+Each card has:
+
+- a link to open the PDF from Cloudinary
+- a `Check Policy` button that kicks off the AI analysis flow
+
+---
+
+#### 8) Checking policy with AI (Gemini + PDF)
+
+**Front‑end side (template + JS):**
+
+- The policy modal markup is in `views/partials/modals.ejs`.
+- Clicking “Check Policy” opens the policy modal and sets the `fileId` + file name:
+
+  ```94:118:public/js/home.js
+  const policyCheckModal = document.getElementById('policyCheckModal');
+  // ...
+  document.querySelectorAll('.check-policy-btn').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      currentFileId = event.target.dataset.fileId;
+      const fileName = event.target
+        .closest('.file-card')
+        .querySelector('a div')
+        .textContent.trim();
+      policyCheckFileName.textContent = fileName;
+      policyQuestionInput.value = '';
+      policyResultArea.textContent = 'Your analysis result will appear here.';
+      policyCheckModal.classList.add('open');
+      policyCheckModal.setAttribute('aria-hidden', 'false');
+    });
+  });
+  ```
+
+- Clicking “Analyze Policy” calls `POST /check-policy/:fileId` with JSON `{ policyQuestion }`.
+- The returned `policyResult` string is formatted into simple sections and rendered safely:
+  - `marked.parse(...)` (Markdown → HTML)
+  - `DOMPurify.sanitize(...)` (prevents XSS)
+
+  ```3:47:public/js/home.js
+  const normalizeModelTextToMarkdown = (text) => {
+    // Produces:
+    // **Answer**
+    // <next line content>
+    // **Reasoning**
+    // <next line content>
+    // **Key Extracts**
+    // <next line content>
+    // ...
+  };
+  ```
+
+It sends `POST /check-policy/:fileId` with JSON `{ policyQuestion }`.
+
+---
+
+**Back‑end routes: `POST /files/:fileId/chat` (Multi-Turn RAG) & `POST /check-policy/:fileId` (Single-Turn)**
+
+See `routes/chat.routes.js` and `services/chat.service.js` for handlers. Summary:
+
+- Validates question and user authorization (`uploadedBy` matches `req.user._id`).
+- Page-bounded hybrid context assembly (`services/chunk.service.js` using `gemini-embedding-001`) + structured table injection (`services/table.service.js`).
+- Dispatches prompt through `services/gemini.client.js` with primary model `gemini-3.6-flash` (fallback `gemini-3.5-flash`).
+- Dual-priority queue: interactive queries get `priority: 'high'`.
+- Verified citations cross-checked against source chunks (FACTUM anti-hallucination verification).
+- Success: JSON response with answer, reasoning, key extracts, and citations.
+
+**Flow:**
+
+1. **Auth & Authorization**: `requireAuth` verifies user session; confirms document ownership (`uploadedBy`).
+2. **Hybrid Semantic Retrieval**: In-memory cosine similarity retrieves top-k page-bounded chunks (`gemini-embedding-001`) alongside relevant 2D GFM tables (`services/table.service.js`).
+3. **Context Assembly & Re-ranking**: Chunks and tables are injected with Lost-in-the-Middle windowing and multi-turn history (last 3 turns).
+4. **Gemini Generation**: Prompt sent to `gemini-3.6-flash` (fallback `gemini-3.5-flash`) with strict citation directives (`[REF-N]`).
+5. **FACTUM Attribution**: Backend validates cited excerpts against verbatim source chunk text; verified citations receive `[Verified]` badges with PDF page jump links.
+6. **Persistence & Response**: Conversation turn and Message with citation provenance saved to MongoDB and returned to the client.
+
+---
+
+### End‑to‑end user journey (summary)
+
+1. **New user**:
+   - Opens `/user/register`, fills form → `POST /user/register`.
+   - User gets stored in MongoDB; app sets `token` cookie and redirects to `/`.
+
+2. **Landing on home**:
+   - Browser calls `GET /`.
+   - `protect` resolves `req.user`; server loads the user’s files and renders `home.ejs`.
+
+3. **Upload policy**:
+   - Clicks "Upload Form" -> modal -> chooses PDF -> submits to `/upload`.
+   - Server streams PDF buffer to Cloudinary, creates `File` metadata in MongoDB (`'uploaded'`), and triggers asynchronous background processing.
+   - Background worker extracts per-page text, identifies and batches 2D tables, indexes page-bounded chunks with 768d Matryoshka embeddings, and sets status to `'ready'`.
+
+4. **Ask questions & converse**:
+   - Clicks "Check Policy" on a file card -> opens conversational chat or inspection modal.
+   - User enters policy query -> backend runs in-memory hybrid cosine retrieval across dense chunks and 2D tables, windowing multi-turn context.
+   - Gemini generates grounded analysis citing exact references (`[REF-N]`).
+   - FACTUM engine validates citations verbatim; UI renders answer with interactive verified page jump anchors.
+
+5. **Compare policies & audit export**:
+   - Selects 2–3 policies via floating action dock -> clicks "Compare Policies" (`POST /compare-policies`) for balanced symmetric quota parity comparison.
+   - Exports 10-parameter actuarial audit reports with cryptographic SHA-256 provenance hashes via PDFKit (`GET /files/:fileId/export-summary?format=pdf`).
+
+6. **Logout**:
+   - User clicks `Logout` -> `GET /user/logout`, token cookie cleared, redirected to login.
+
+---

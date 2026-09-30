@@ -1,0 +1,96 @@
+<div id="auditReportModal" class="modal" aria-hidden="true">
+  <div class="modal-card modal-card-audit" style="max-width:960px;width:95%;max-height:92vh;display:flex;flex-direction:column;">
+    <div style="position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;">
+      <div class="close-x" id="closeAuditReportModal" role="button" tabindex="0" aria-label="Close audit report modal">&times;</div>
+
+      <div class="modal-top-bar" style="padding-right:48px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <h3 style="margin:0;">Actuarial Policy Audit Report</h3>
+        </div>
+        <p style="color:var(--text-secondary);font-size:13px;margin:3px 0 0;">Document: <strong id="auditModalFileName" style="color:var(--champagne-100);"></strong></p>
+      </div>
+
+      <!-- Parameter Badges Grid -->
+      <div id="auditParametersGrid" class="audit-params-grid" style="display:none;margin-bottom:12px;">
+        <div class="audit-param-card">
+          <div class="audit-param-label">Waiting Period (PED)</div>
+          <div class="audit-param-value" id="paramPED">&mdash;</div>
+        </div>
+        <div class="audit-param-card">
+          <div class="audit-param-label">Room Rent Limit</div>
+          <div class="audit-param-value" id="paramRoomRent">&mdash;</div>
+        </div>
+        <div class="audit-param-card">
+          <div class="audit-param-label">Co-payment</div>
+          <div class="audit-param-value" id="paramCopay">&mdash;</div>
+        </div>
+        <div class="audit-param-card">
+          <div class="audit-param-label">Pre / Post Hospitalization</div>
+          <div class="audit-param-value" id="paramPrePost">&mdash;</div>
+        </div>
+        <div class="audit-param-card">
+          <div class="audit-param-label">Specific Ailments Waiting</div>
+          <div class="audit-param-value" id="paramSpecificWait">&mdash;</div>
+        </div>
+        <div class="audit-param-card">
+          <div class="audit-param-label">ICU Limit</div>
+          <div class="audit-param-value" id="paramICU">&mdash;</div>
+        </div>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div id="auditReportLoading" class="audit-loading-skeleton" style="display:none;padding:24px 16px;">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--champagne-300);margin-bottom:12px;letter-spacing:0.04em;text-transform:uppercase;">
+          Synthesizing 5 Actuarial Pillars &bull; Structured Grounding&hellip;
+        </div>
+        <div class="skeleton-bar title"></div>
+        <div class="skeleton-bar w-90"></div>
+        <div class="skeleton-bar w-75"></div>
+        <div class="skeleton-bar w-60"></div>
+      </div>
+
+      <!-- Error message container -->
+      <div id="auditErrorMsg" class="compare-error-msg" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(239,83,80,0.12);border:1px solid rgba(239,83,80,0.4);border-radius:6px;color:#ef9a9a;font-size:12.5px;"></div>
+
+      <!-- Report Viewport -->
+      <div id="auditReportContent" class="audit-report-viewport" style="flex:1;overflow-y:auto;padding:16px;background:rgba(18,18,22,0.65);border:1px solid var(--border-visible);border-radius:var(--radius-md);display:none;min-height:220px;max-height:50vh;">
+        <div id="auditReportMarkdown" class="markdown-body"></div>
+        <div id="auditCitationsList" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border-subtle);display:none;">
+          <h5 style="color:var(--champagne-300);font-size:11.5px;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em;font-family:var(--font-mono);">FACTUM Verified Source Citations</h5>
+          <div id="auditCitationsContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div id="auditFooterActions" style="display:none;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-subtle);">
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.03em;">Grounding: 5-Pillar Actuarial Synthesis + 2D Tables</span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="button" class="btn-secondary" id="printAuditReportBtn" style="display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:12.5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Print</span>
+          </button>
+          <button type="button" class="copy-result-btn" id="copyAuditReportBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="copyAuditText">Copy</span>
+          </button>
+          <a id="downloadAuditMdBtn" href="#" class="btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:12.5px;text-decoration:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Download .md</span>
+          </a>
+          <a id="downloadAuditPdfBtn" href="#" class="btn" style="display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:38px;font-size:12.5px;text-decoration:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            <span>Download PDF</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

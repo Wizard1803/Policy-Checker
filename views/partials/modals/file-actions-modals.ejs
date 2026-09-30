@@ -1,0 +1,38 @@
+<div id="renameModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div style="position:relative;">
+      <div class="close-x" id="closeRenameModal" role="button" tabindex="0" aria-label="Close rename modal">&times;
+      </div>
+      <h3>Rename Document</h3>
+      <form id="renameForm">
+        <input type="hidden" id="renameFileId" />
+        <label for="renameInput" style="display:block;margin:12px 0 6px;color:var(--muted);font-size:13px;">New Document
+          Name</label>
+        <input class="file-input" type="text" id="renameInput" required
+          style="width:100%;box-sizing:border-box;margin-top:0;" />
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+          <button type="button" class="btn-secondary" id="cancelRename">Cancel</button>
+          <button type="submit" class="btn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="deleteModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div style="position:relative;">
+      <div class="close-x" id="closeDeleteModal" role="button" tabindex="0" aria-label="Close delete modal">&times;
+      </div>
+      <h3>Delete Document</h3>
+      <p style="color:var(--muted);margin:14px 0 6px;line-height:1.5;">Are you sure you want to permanently delete
+        <strong id="deleteFileName" style="color:var(--beige-100)"></strong>? This will remove the document and all
+        associated data.</p>
+      <input type="hidden" id="deleteFileId" />
+      <div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end;">
+        <button type="button" class="btn-secondary" id="cancelDelete">Cancel</button>
+        <button type="button" class="btn-danger" id="confirmDelete">Confirm Delete</button>
+      </div>
+    </div>
+  </div>
+</div>

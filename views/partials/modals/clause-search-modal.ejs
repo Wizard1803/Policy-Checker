@@ -1,0 +1,83 @@
+<div id="clauseSearchModal" class="modal" aria-hidden="true">
+  <div class="modal-card modal-card-clause-search" style="max-width:920px;width:95%;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;">
+      <div class="close-x" id="closeClauseSearchModal" role="button" tabindex="0" aria-label="Close clause search modal">&times;</div>
+
+      <div class="modal-top-bar" style="padding-right:48px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <h3 style="margin:0;">Semantic Clause Finder</h3>
+        </div>
+        <p style="color:var(--text-secondary);font-size:13px;margin:3px 0 0;">Document: <strong id="clauseSearchFileName" style="color:var(--champagne-100);"></strong></p>
+      </div>
+
+      <!-- Quick Search Suggestion Chips -->
+      <div class="quick-prompts-bar">
+        <span class="quick-prompts-label">Quick Suggestions:</span>
+        <button type="button" class="clause-chip" data-query="waiting period pre-existing diseases">Waiting Periods</button>
+        <button type="button" class="clause-chip" data-query="room rent limit ICU category">Room Rent &amp; ICU</button>
+        <button type="button" class="clause-chip" data-query="co-payment percentage deductible">Co-payment</button>
+        <button type="button" class="clause-chip" data-query="cataract surgery sub-limit">Cataract Limit</button>
+        <button type="button" class="clause-chip" data-query="pre-hospitalization and post-hospitalization days">Pre / Post Hosp</button>
+        <button type="button" class="clause-chip" data-query="day care treatments procedures">Day Care</button>
+        <button type="button" class="clause-chip" data-query="permanent general exclusions">Exclusions</button>
+      </div>
+
+      <!-- Search Input Bar -->
+      <div class="clause-search-bar" style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+        <div style="flex:1;position:relative;">
+          <input
+            type="text"
+            id="clauseSearchInput"
+            class="file-input"
+            placeholder="Search verbatim clauses, waiting periods, room caps, exclusions&hellip;"
+            style="width:100%;margin:0;padding-left:36px;font-size:13.5px;"
+          />
+          <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+        <button type="button" class="btn" id="submitClauseSearchBtn" style="height:44px;padding:0 20px;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+          <span>Find</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+
+      <!-- Stats Bar -->
+      <div id="clauseSearchStats" style="display:none;align-items:center;justify-content:space-between;margin-top:8px;font-family:var(--font-mono);font-size:11.5px;color:var(--champagne-300);">
+        <span id="clauseSearchCountText">0 matches found</span>
+        <span style="color:var(--text-muted);">Vector Chunks + 2D Tables</span>
+      </div>
+
+      <!-- Error message container -->
+      <div id="clauseSearchErrorMsg" class="compare-error-msg" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(239,83,80,0.12);border:1px solid rgba(239,83,80,0.4);border-radius:6px;color:#ef9a9a;font-size:12.5px;"></div>
+
+      <!-- Loading skeleton -->
+      <div id="clauseSearchLoading" class="audit-loading-skeleton" style="display:none;padding:24px 16px;">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--champagne-300);margin-bottom:12px;letter-spacing:0.04em;text-transform:uppercase;">
+          Scanning 768d Vector Space &bull; Ranking Verbatim Passages&hellip;
+        </div>
+        <div class="skeleton-bar title"></div>
+        <div class="skeleton-bar w-90"></div>
+        <div class="skeleton-bar w-75"></div>
+      </div>
+
+      <!-- Results Viewport -->
+      <div id="clauseSearchResults" class="clause-results-viewport" style="flex:1;overflow-y:auto;margin-top:10px;padding:12px 4px;display:flex;flex-direction:column;gap:12px;min-height:220px;max-height:50vh;">
+        <!-- Welcome Card -->
+        <div class="chat-welcome-card" id="clauseSearchWelcome">
+          <div class="chat-welcome-icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--champagne-100);font-size:14px;margin-bottom:4px;">Direct Sub-50ms Clause Discovery</div>
+            <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;">Search keywords or coverage conditions across 768d vector chunks and schedule tables without LLM latency.</div>
+          </div>
+        </div>
+        <!-- Results dynamically inserted here -->
+      </div>
+
+    </div>
+  </div>
+</div>

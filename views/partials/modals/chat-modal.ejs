@@ -1,0 +1,143 @@
+<div id="policyCheckModal" class="modal" aria-hidden="true">
+  <div class="modal-card modal-card-chat" style="max-width:850px;width:95%;max-height:90vh;display:flex;flex-direction:column;">
+    <div style="position:relative;display:flex;flex-direction:column;height:100%;overflow:hidden;">
+      <div class="close-x" id="closePolicyCheckModal" role="button" tabindex="0" aria-label="Close policy check modal">&times;</div>
+      <div class="modal-top-bar" style="display:flex;justify-content:space-between;align-items:center;padding-right:48px;margin-bottom:8px;">
+        <div>
+          <h3 style="margin:0;">Policy Conversational Inspector</h3>
+          <p style="color:var(--text-secondary);font-size:13px;margin:2px 0 0;">File: <strong id="policyCheckFileName" style="color:var(--champagne-100);"></strong></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="chat-session-selector-wrap" style="position:relative;display:flex;align-items:center;">
+            <select id="chatSessionSelect" class="chat-session-select" aria-label="Select conversation session">
+              <option value="new">+ New Session</option>
+            </select>
+          </div>
+          <button type="button" class="btn-secondary" id="toggleSplitViewBtn" aria-label="Toggle split-screen document viewer" style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:12px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+            <span id="toggleSplitViewText">Split View</span>
+          </button>
+          <button type="button" class="btn-secondary" id="newChatBtn" aria-label="Start a new chat session" style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:12px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Session</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Split Layout Container -->
+      <div id="chatSplitContainer" class="chat-split-container" style="display:flex;flex:1;gap:16px;overflow:hidden;min-height:0;">
+        <!-- Left Pane: Conversational Intelligence -->
+        <div id="chatMainPane" class="chat-main-pane" style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;">
+          <!-- Quick Inquiry Prompt Chips -->
+          <div class="quick-prompts-bar">
+            <span class="quick-prompts-label">Quick Inquiries:</span>
+            <button type="button" class="prompt-chip" data-prompt="What is the waiting period for pre-existing diseases and specific ailments?">Waiting Periods</button>
+            <button type="button" class="prompt-chip" data-prompt="What are the room rent limits and ICU charges covered under this policy?">Room Rent &amp; ICU</button>
+            <button type="button" class="prompt-chip" data-prompt="What are the major exclusions and medical conditions not covered?">Major Exclusions</button>
+            <button type="button" class="prompt-chip" data-prompt="Is cataract surgery covered and what are the specific sub-limits?">Cataract Limit</button>
+          </div>
+
+          <!-- Chat Stream Container -->
+          <div id="chatMessagesStream" class="chat-messages-stream" style="flex:1;overflow-y:auto;padding:12px 4px;display:flex;flex-direction:column;gap:14px;min-height:220px;max-height:50vh;">
+            <!-- Welcome Card -->
+            <div class="chat-welcome-card" id="chatWelcomeCard">
+              <div class="chat-welcome-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <div>
+                <div style="font-weight:600;color:var(--champagne-100);font-size:14px;margin-bottom:4px;">Document-Grounded Conversational Intelligence</div>
+                <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;">Ask any policy coverage question. Every answer cites exact clauses and actuarial tables with FACTUM verbatim verification.</div>
+              </div>
+            </div>
+
+            <!-- Result area container for backward compatibility -->
+            <div id="policyResultArea" class="policy-result-area" style="display:none;"></div>
+          </div>
+
+          <!-- Citation Inspector Card (Popover preview) -->
+          <div id="citationInspectorCard" class="citation-inspector-card" style="display:none;">
+            <div class="citation-inspector-header">
+              <span class="citation-inspector-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--champagne-300)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span id="citationInspectorBadgeText">FACTUM Verified Citation</span>
+              </span>
+              <button type="button" class="close-x-sm" id="closeCitationInspector" aria-label="Close citation inspector">&times;</button>
+            </div>
+            <div class="citation-inspector-body">
+              <div class="citation-inspector-page" id="citationInspectorPage"></div>
+              <blockquote class="citation-inspector-quote" id="citationInspectorQuote"></blockquote>
+            </div>
+          </div>
+
+          <!-- Chat Input Bar -->
+          <div class="chat-input-bar" style="margin-top:10px;border-top:1px solid var(--border-visible);padding-top:12px;">
+            <div style="display:flex;gap:10px;align-items:flex-end;">
+              <textarea
+                id="policyQuestionInput"
+                name="policy-question"
+                autocomplete="off"
+                spellcheck="false"
+                class="policy-question-input"
+                rows="2"
+                placeholder="Ask a question or follow-up regarding this policy&hellip;"
+                style="margin:0;resize:vertical;min-height:50px;max-height:120px;"
+              ></textarea>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+                <span id="loadingPolicyCheck" class="loading-spinner" style="display:none;"></span>
+                <button type="button" class="btn" id="submitPolicyCheck" aria-label="Submit policy question for AI analysis" style="height:46px;padding:0 18px;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+                  <span>Analyze</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+              <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);letter-spacing:0.03em;">Grounding: 768d Vector Chunks + 2D Tables</span>
+              <button type="button" class="copy-result-btn" id="copyPolicyResult" aria-label="Copy analysis result to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span id="copyBtnText">Copy</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Pane: In-App Document PDF Viewer (Feature I) -->
+        <div id="pdfViewerPane" class="pdf-viewer-pane" style="display:none;flex:1.15;flex-direction:column;min-width:0;background:rgba(15,14,13,0.95);border:1px solid var(--border-visible);border-radius:var(--radius-md);overflow:hidden;">
+          <!-- PDF Toolbar -->
+          <div class="pdf-toolbar" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(24,24,28,0.95);border-bottom:1px solid var(--border-visible);">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--champagne-200);font-family:var(--font-mono);min-width:0;">
+              <span id="pdfViewerDocTitle" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--champagne-100);font-weight:600;">Policy</span>
+              <span style="color:var(--text-muted);">&bull;</span>
+              <span>Page <strong id="pdfCurrentPage" style="color:#fff;">1</strong> of <span id="pdfTotalPages">--</span></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn-secondary" id="pdfPrevPageBtn" style="padding:4px 8px;font-size:11px;" title="Previous Page">&larr; Prev</button>
+              <input type="number" id="pdfPageInput" min="1" value="1" style="width:44px;height:26px;background:rgba(255,255,255,0.06);border:1px solid var(--border-visible);color:#fff;border-radius:4px;text-align:center;font-size:11px;" title="Jump to page" />
+              <button type="button" class="btn-secondary" id="pdfNextPageBtn" style="padding:4px 8px;font-size:11px;" title="Next Page">Next &rarr;</button>
+              <a id="pdfPopoutBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="padding:4px 8px;font-size:11px;display:flex;align-items:center;gap:4px;text-decoration:none;" title="Open in new window">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+              <button type="button" class="close-x-sm" id="closePdfViewerBtn" aria-label="Close document pane" title="Close document pane">&times;</button>
+            </div>
+          </div>
+
+          <!-- Citation Callout Banner -->
+          <div id="pdfCitationCallout" style="display:none;padding:8px 12px;background:rgba(197,160,89,0.08);border-bottom:1px solid var(--border-visible);font-size:12px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <span class="citation-pill verified" style="font-size:10px;padding:2px 8px;cursor:default;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>FACTUM Verified Excerpt</span>
+              </span>
+              <span id="pdfCitationPageLabel" style="font-size:11px;color:var(--champagne-300);font-family:var(--font-mono);">Page 1</span>
+            </div>
+            <p id="pdfCitationText" style="margin:0;color:var(--text-secondary);font-size:11.5px;line-height:1.4;font-style:italic;"></p>
+          </div>
+
+          <!-- Live PDF Viewport -->
+          <div style="flex:1;position:relative;background:#1a1918;overflow:hidden;min-height:300px;">
+            <iframe id="pdfViewerIframe" src="about:blank" style="width:100%;height:100%;border:none;display:block;" title="Live Policy Document Viewer"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
